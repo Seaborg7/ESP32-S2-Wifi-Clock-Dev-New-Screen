@@ -12,6 +12,7 @@
 #define REPEAT_CAL false
 
 TFT_eSPI tft = TFT_eSPI();
+DHT dht(DHT_PIN, DHTTYPE);
 
 void WifiInit()
 {

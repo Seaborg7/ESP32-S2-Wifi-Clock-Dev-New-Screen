@@ -1,5 +1,11 @@
-// #pragma once
+#pragma once
 
-// #include "initFuntions.h"
+#include "initFuntions.h"
 
-// void ScreenController();
+extern struct tm timeinfo;
+
+extern volatile int screenIterator;
+extern const int iteratorIncreaser;
+
+void checkAndUpdateIcon(int x, int y);
+void ScreenController();
