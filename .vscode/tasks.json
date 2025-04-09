@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "PlatformIO: Build and Upload",
+			"command": "C:\\Users\\Bocian\\.platformio\\penv\\Scripts\\pio.exe run -t upload",
+			"problemMatcher": ["$platformio"],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
