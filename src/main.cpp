@@ -46,7 +46,8 @@
 volatile bool buttonState = false;
 volatile bool prevButtonState = false;
 volatile bool ledState = false;
-volatile bool readSensorFlag = true; // Flag for reading local sensor data
+volatile bool readSensorFlag = true;         // Flag for reading local sensor data
+volatile bool handleButtonPressFlag = false; // Flag for handling button press
 
 hw_timer_t *timerScreenIter = NULL;
 hw_timer_t *timerLocalSensor = NULL;
@@ -96,6 +97,9 @@ void IRAM_ATTR handleButtonPress()
     unsigned long currentTime = millis();
     if (currentTime - lastDebounceTime > debounceDelay)
     {
+        handleButtonPressFlag = true;
+        Serial.printf("Button pressed! currentTime: %s , lastDebounceTime: %s, screenIterator: %d\n", String(currentTime).c_str(), String(lastDebounceTime).c_str(), screenIterator);
+
         if (tft.getTouch(&touchX, &touchY))
         {
             // Serial.println("Click, zaczynam nowy timerScreenIter ******************************************************");
@@ -217,11 +221,17 @@ void loop()
         getLocalSensorMeasurements();
     }
 
-    Serial.println("------------------------------------------------------");
-    Serial.printf("Aktualny czas: %02d:%02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-    Serial.printf("Wilgotność: %.0f %% \n", humidity);
-    Serial.printf("Temperatura: %.1f *C \n", temperature);
-    Serial.println("---------------");
+    if (handleButtonPressFlag)
+    {
+        handleButtonPressFlag = false;
+        Serial.printf("New touch! X: %d, Y: %d\n", touchX, touchY);
+    }
+
+    // Serial.println("------------------------------------------------------");
+    // Serial.printf("Aktualny czas: %02d:%02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    // Serial.printf("Wilgotność: %.0f %% \n", humidity);
+    // Serial.printf("Temperatura: %.1f *C \n", temperature);
+    // Serial.println("---------------");
 
     ScreenController();
 

@@ -113,17 +113,18 @@ void ScreenController()
     tft.printf("Snieg: %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].snow);
 
     // // Small iterable text on bottom half of the screen //
-    // tft.setCursor(0, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2) + 100);
-    // tft.setTextSize(2);
-    // tft.printf("%s %.1f %.1f\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
-    // tft.printf("%s\n", weatherData[screenIterator + iteratorIncreaser].description.c_str());
-    // tft.printf("%.0f km/h %.1f %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed * 3.6f, weatherData[screenIterator + iteratorIncreaser].rain, weatherData[screenIterator + iteratorIncreaser].snow);
+    // // tft.setCursor(0, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2) + 100);
+    // // tft.setTextSize(2);
+    // // tft.printf("%s %.1f %.1f\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
+    // // tft.printf("%s\n", weatherData[screenIterator + iteratorIncreaser].description.c_str());
+    // // tft.printf("%.0f km/h %.1f %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed * 3.6f, weatherData[screenIterator + iteratorIncreaser].rain, weatherData[screenIterator + iteratorIncreaser].snow);
 
-    // tft.printf("%s %s\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), weatherData[screenIterator + iteratorIncreaser].description.c_str());
-    // tft.printf("Temp: %.1f 'C Feels like: %.1f 'C\n", weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
-    // tft.printf("Wind %.2f m/s Rain(3h) %.2f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed, weatherData[screenIterator + iteratorIncreaser].rain);
-    Serial.printf("Time: %s   ScreenIter: %d\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), screenIterator);
-    Serial.printf("Description: %s \n", weatherData[screenIterator + iteratorIncreaser].description.c_str());
-    Serial.printf("Temp: %.1f 'C Feels like: %.1f 'C\n", weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
-    Serial.printf("Wind %.0f km/h Rain(3h) %.1f mm Snow(3h) %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed * 3.6f, weatherData[screenIterator + iteratorIncreaser].rain, weatherData[screenIterator + iteratorIncreaser].snow);
+    // // tft.printf("%s %s\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), weatherData[screenIterator + iteratorIncreaser].description.c_str());
+    // // tft.printf("Temp: %.1f 'C Feels like: %.1f 'C\n", weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
+    // // tft.printf("Wind %.2f m/s Rain(3h) %.2f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed, weatherData[screenIterator + iteratorIncreaser].rain);
+
+    // Serial.printf("Time: %s   ScreenIter: %d\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), screenIterator);
+    // Serial.printf("Description: %s \n", weatherData[screenIterator + iteratorIncreaser].description.c_str());
+    // Serial.printf("Temp: %.1f 'C Feels like: %.1f 'C\n", weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
+    // Serial.printf("Wind %.0f km/h Rain(3h) %.1f mm Snow(3h) %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed * 3.6f, weatherData[screenIterator + iteratorIncreaser].rain, weatherData[screenIterator + iteratorIncreaser].snow);
 }
