@@ -13,6 +13,7 @@
 
 TFT_eSPI tft = TFT_eSPI();
 DHT dht(DHT_PIN, DHTTYPE);
+Preferences preferences; // Obiekt do zarządzania pamięcią NVS
 
 void WifiInit()
 {
@@ -100,4 +101,12 @@ void touch_calibrate()
             f.close();
         }
     }
+}
+
+int loadBrightnessLevel()
+{
+    preferences.begin("settings", true);             // Otwórz przestrzeń nazw "settings" w trybie odczytu
+    int level = preferences.getInt("brightness", 0); // Odczytaj wartość jasności (domyślnie 0)
+    preferences.end();                               // Zamknij przestrzeń nazw
+    return level;
 }
