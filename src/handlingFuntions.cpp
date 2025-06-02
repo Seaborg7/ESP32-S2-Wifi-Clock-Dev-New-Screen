@@ -46,7 +46,7 @@ void getLocalSensorMeasurements()
     }
 }
 
-void checkAndUpdateTempAndHumidity(char *buffer)
+void checkAndUpdateTempAndHumidity(char *buffer, int heightOffset)
 {
     static float previousTemperature = 0;
     static float previousHumidity = 0;
@@ -57,7 +57,7 @@ void checkAndUpdateTempAndHumidity(char *buffer)
 
         tft.setTextSize(3);
         sprintf(buffer, "%.1f'C  %.0f%%", temperature, humidity);
-        drawCenteredText(String(buffer), (8 * 5 + 2) + (8 * 2 + 2));
+        drawCenteredText(String(buffer), heightOffset + (8 * 5 + 2) + (8 * 2 + 2));
 
         previousTemperature = temperature;
         previousHumidity = humidity;
@@ -155,4 +155,11 @@ void printAllTnternalFileList()
         Serial.println(file.name());
         file = root.openNextFile();
     }
+}
+
+void saveBrightnessLevel(int level)
+{
+    preferences.begin("settings", false);    // Otwórz przestrzeń nazw "settings" w trybie zapisu
+    preferences.putInt("brightness", level); // Zapisz wartość jasności
+    preferences.end();                       // Zamknij przestrzeń nazw
 }

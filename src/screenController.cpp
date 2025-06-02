@@ -32,18 +32,19 @@ void ScreenController()
 {
     // Font Height is 8 pixels for size 1, 16 for size 2 etc, thats why HEIGHT is multiplied by 8 + 2 for spacing
     char buffer[50];
+    int heightOffset = 10;
 
     tft.setTextColor(TFT_WHITE, TFT_BLACK, true);
 
     // 1st line - time
     tft.setTextSize(5);
     sprintf(buffer, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-    drawCenteredText(String(buffer), 0);
+    drawCenteredText(String(buffer), heightOffset + 0);
 
     // 2nd line - date
     tft.setTextSize(2);
     sprintf(buffer, "%02d-%02d %s", timeinfo.tm_mday, timeinfo.tm_mon + 1, daysOfWeek[timeinfo.tm_wday]);
-    drawCenteredText(String(buffer), (8 * 5 + 2));
+    drawCenteredText(String(buffer), heightOffset + (8 * 5 + 2));
 
     // tft.setCursor(25, (8 * 5 + 2) + (8 * 2 + 2));
     // tft.setTextSize(3);
@@ -55,7 +56,7 @@ void ScreenController()
     // tft.setTextSize(3);
     // sprintf(buffer, "%.1f'C  %.0f%%", temperature, humidity);
     // drawCenteredText(String(buffer), (8 * 5 + 2) + (8 * 2 + 2));
-    checkAndUpdateTempAndHumidity(buffer);
+    checkAndUpdateTempAndHumidity(buffer, heightOffset);
 
     // tft.setCursor(60, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2));
     // tft.setTextSize(2);
@@ -64,53 +65,53 @@ void ScreenController()
     // 4th line - sunrise and sunset
     tft.setTextSize(2);
     sprintf(buffer, "%s  %s", weatherData[0].time.substring(0, 5).c_str(), weatherData[0].time.substring(6, 11).c_str());
-    drawCenteredText(String(buffer), (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2));
+    drawCenteredText(String(buffer), heightOffset + (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2));
 
     // tft.drawFastHLine(200, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2), 210, TFT_WHITE);
-    tft.drawLine(20, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2), 220, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2), TFT_WHITE);
+    tft.drawLine(20, heightOffset + (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2), 220, heightOffset + (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2), TFT_WHITE);
     //-----------------------------------------------------------------------------------------------------------------------//  LINE on 104-105
     if (screenIterator > 0)
     {
         tft.setTextSize(2);
         sprintf(buffer, "%s", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str());
-        drawCenteredText(String(buffer), 108);
+        drawCenteredText(String(buffer), heightOffset + 108);
     }
     else
     {
         tft.setTextSize(2);
         sprintf(buffer, "%s", "           ");
-        drawCenteredText(String(buffer), 108);
+        drawCenteredText(String(buffer), heightOffset + 108);
     }
 
     tft.setTextSize(1);
-    tft.setCursor(130, 108 + (8 * 2 + 4));
+    tft.setCursor(130, heightOffset + 108 + (8 * 2 + 4));
     tft.printf("%s", "temp. rzeczywista");
 
     tft.setTextSize(3);
     sprintf(buffer, "%5.1f'C", weatherData[screenIterator + iteratorIncreaser].temp); // max 5 znaków szerokości
-    tft.setTextDatum(TR_DATUM);                                                       // TR_DATUM
-    tft.drawString(String(buffer), 240, 108 + (8 * 2 + 4) + (8 * 1 + 2));
+    tft.setTextDatum(TR_DATUM);                                                       // TR_DATUM - Top right
+    tft.drawString(String(buffer), 240, heightOffset + 108 + (8 * 2 + 4) + (8 * 1 + 2));
 
     tft.setTextSize(1);
-    tft.setCursor(130, 108 + (8 * 2 + 4) + (8 * 1 + 2) + (8 * 3 + 10));
+    tft.setCursor(130, heightOffset + 108 + (8 * 2 + 4) + (8 * 1 + 2) + (8 * 3 + 10));
     tft.printf("%s", "temp. odczuwalna");
 
     tft.setTextSize(3);
     sprintf(buffer, "%5.1f'C", weatherData[screenIterator + iteratorIncreaser].feelsLike); // max 5 znaków szerokości
     tft.setTextDatum(TR_DATUM);
-    tft.drawString(String(buffer), 240, 108 + (8 * 2 + 4) + (8 * 1 + 2) + (8 * 3 + 10) + (8 * 1 + 2));
+    tft.drawString(String(buffer), 240, heightOffset + 108 + (8 * 2 + 4) + (8 * 1 + 2) + (8 * 3 + 10) + (8 * 1 + 2));
 
     // tft.drawRect(10, 130, 100, 100, TFT_WHITE); // 10, 130, 110, 230
     // displayPNG(("/" + weatherData[screenIterator + iteratorIncreaser].icon + ".png").c_str(), 10, 110); // edit pozycji
-    checkAndUpdateIcon(10, 110);
+    checkAndUpdateIcon(10, heightOffset + 110);
 
     tft.setTextSize(2);
-    tft.setCursor(15, 235);
-    tft.printf("Wiatr: %.0f km/h\n", weatherData[screenIterator + iteratorIncreaser].windSpeed * 3.6f);
-    tft.setCursor(15, 253);
-    tft.printf("Deszcz: %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].rain);
-    tft.setCursor(15, 271);
-    tft.printf("Snieg: %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].snow);
+    tft.setCursor(15, heightOffset + 235);
+    tft.printf("Wiatr: %3.0f km/h\n", weatherData[screenIterator + iteratorIncreaser].windSpeed * 3.6f);
+    tft.setCursor(15, heightOffset + 253);
+    tft.printf("Deszcz: %3.1f mm\n", weatherData[screenIterator + iteratorIncreaser].rain);
+    tft.setCursor(15, heightOffset + 271);
+    tft.printf("Snieg: %4.1f mm\n", weatherData[screenIterator + iteratorIncreaser].snow);
 
     // // Small iterable text on bottom half of the screen //
     // // tft.setCursor(0, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2) + 100);
