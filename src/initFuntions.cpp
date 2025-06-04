@@ -103,10 +103,10 @@ void touch_calibrate()
     }
 }
 
-int loadBrightnessLevel()
+int loadBrightnessLevel(char const *name)
 {
-    preferences.begin("settings", true);             // Otwórz przestrzeń nazw "settings" w trybie odczytu
-    int level = preferences.getInt("brightness", 0); // Odczytaj wartość jasności (domyślnie 0)
-    preferences.end();                               // Zamknij przestrzeń nazw
+    preferences.begin("settings", true);     // Open the namespace "settings" in NVS for reading
+    int level = preferences.getInt(name, 0); // Read the brightness level, default to 0 if not found
+    preferences.end();                       // Close the namespace
     return level;
 }

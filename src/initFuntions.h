@@ -9,8 +9,8 @@
 
 extern TFT_eSPI tft;
 extern DHT dht;
-extern Preferences preferences; // Obiekt do zarządzania pamięcią NVS
+extern Preferences preferences; // Object for managing NVS memory
 
 void WifiInit();
 void touch_calibrate();
-int loadBrightnessLevel();
+int loadBrightnessLevel(char const *name);

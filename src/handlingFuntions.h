@@ -20,4 +20,4 @@ int32_t pngRead(PNGFILE *page, uint8_t *buffer, int32_t length);
 int32_t pngSeek(PNGFILE *page, int32_t position);
 void displayPNG(const char *filename, int x, int y);
 void printAllTnternalFileList();
-void saveBrightnessLevel(int level);
+void saveSetting(int level, char const *name);

@@ -39,13 +39,12 @@
 #define LED_PIN 15
 #define BUTTON_PIN 0
 
-volatile int brightnessLevel = 0;                                // Aktualny poziom jasności (indeks w tablicy)
+volatile bool screenSleepingFlag = false;
+volatile int brightnessLevel = 0; // index in table brightnessLevelsTable
+int lastBrightnessLevel = 0;
 const int brightnessLevelsTable[] = {255, 204, 153, 102, 51, 0}; // 100%, 80%, 60%, 40%, 20%, 0%
-volatile bool buttonPressedFlag = false;                         // Flaga do obsługi przycisku
+volatile bool buttonPressedFlag = false;                         // Flag for button press handling
 
-volatile bool buttonState = false;
-volatile bool prevButtonState = false;
-volatile bool ledState = false;
 volatile bool readSensorFlag = true;   // Flag for reading local sensor data
 volatile bool screenPressFlag = false; // Flag for handling screen press
 
@@ -65,8 +64,6 @@ const int daylightOffset_sec = 3600;
 
 volatile unsigned long timerScreenIterDelay = 5000000;  // 5 seconds
 volatile unsigned long timerLocalSensorDelay = 2000000; // 2 seconds
-// volatile unsigned long screenCurrentMillis = millis();
-// volatile unsigned long screenLastCallTime = 0;
 
 volatile unsigned long taskWeatherDataDelay = 10000;
 
@@ -100,10 +97,6 @@ void IRAM_ATTR handleScreenPress()
     if (currentTime - lastScreenDebounceTime > screenDebounceDelay)
     {
         screenPressFlag = true;
-        timerWrite(timerScreenIter, 0);
-        timerStart(timerScreenIter);
-
-        digitalWrite(LED_PIN, true);
         lastScreenDebounceTime = currentTime;
     }
 }
@@ -115,13 +108,13 @@ void IRAM_ATTR onTimerScreenIter()
 
     screenIterator = 0;
     digitalWrite(LED_PIN, false);
-    ledcWrite(0, brightnessLevelsTable[brightnessLevel]); // Ustaw jasność na podstawie odczytu z NVS
-    // Serial.println("Stopuje timerScreenIter ******************************************************");
+    ledcWrite(0, brightnessLevelsTable[brightnessLevel]); // Set brightness based on brightnessLevel value
+    // Serial.println("Stopping timerScreenIter ******************************************************");
 }
 
 void IRAM_ATTR onTimerLocalSensor()
 {
-    readSensorFlag = true; // Ustaw flagę w przerwaniu
+    readSensorFlag = true;
 }
 
 void drawDotsOnTouch()
@@ -144,10 +137,6 @@ void IRAM_ATTR handleBrightnessButton()
     if (currentTime - lastButtonDebounceTime > buttonDebounceDelay)
     {
         buttonPressedFlag = true;
-        timerWrite(timerScreenIter, 0);
-        timerStart(timerScreenIter);
-
-        digitalWrite(LED_PIN, true);
         lastButtonDebounceTime = currentTime;
     }
 }
@@ -166,16 +155,16 @@ void setup(void)
     touch_calibrate();
     tft.fillScreen(TFT_BLACK);
 
-    // Konfiguracja podświetlenia
+    // Backlight configuration
     pinMode(TFT_BL, OUTPUT);
-    ledcAttachPin(TFT_BL, 0);                             // Kanał PWM 0
-    ledcSetup(0, 5000, 8);                                // Kanał 0, częstotliwość 5 kHz, rozdzielczość 8 bitów
-    brightnessLevel = loadBrightnessLevel();              // Odczytaj poziom jasności z NVS
-    ledcWrite(0, brightnessLevelsTable[brightnessLevel]); // Ustaw jasność na podstawie odczytu z NVS
+    ledcAttachPin(TFT_BL, 0);                             // PWM channel is set to 0
+    ledcSetup(0, 5000, 8);                                // Channel 0, frequency 5 kHz, resolution 8 bits
+    brightnessLevel = loadBrightnessLevel("brightness");  // Load brightness level from NVS
+    ledcWrite(0, brightnessLevelsTable[brightnessLevel]); // Set brightness based on NVS read
 
-    // Konfiguracja przycisku
-    pinMode(BUTTON_PIN, INPUT_PULLUP);                                                   // Przycisk z podciąganiem
-    attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleBrightnessButton, FALLING); // Przerwanie na opadającym zboczu
+    // Button configuration
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleBrightnessButton, FALLING); // Set up interrupt for button press on falling edge
 
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
@@ -186,17 +175,15 @@ void setup(void)
     fetchCurrentWeather();
     fetchWeatherForecast();
 
-    timerScreenIter = timerBegin(0, 80, true);                       // Timer 0, prescaler 80, licznik w trybie up-count
-    timerAttachInterrupt(timerScreenIter, &onTimerScreenIter, true); // Ustawienie przerwania
-    timerAlarmWrite(timerScreenIter, timerScreenIterDelay, true);    // 5 sekund
-    timerAlarmEnable(timerScreenIter);                               // Włączenie alarmu
+    timerScreenIter = timerBegin(0, 80, true);                       // Timer 0, prescaler 80, counter in up-count mdoe
+    timerAttachInterrupt(timerScreenIter, &onTimerScreenIter, true); // Setup interrupt
+    timerAlarmWrite(timerScreenIter, timerScreenIterDelay, true);    // 5 seconds
+    timerAlarmEnable(timerScreenIter);                               // Alarm enable
 
-    timerLocalSensor = timerBegin(1, 80, true);                        // Timer 1, prescaler 80, licznik w trybie up-count
-    timerAttachInterrupt(timerLocalSensor, &onTimerLocalSensor, true); // Ustawienie przerwania
-    timerAlarmWrite(timerLocalSensor, timerLocalSensorDelay, true);    // 2 sekundy
-    timerAlarmEnable(timerLocalSensor);                                // Włączenie alarmu
-
-    // delay(3000);
+    timerLocalSensor = timerBegin(1, 80, true);                        // Timer 1, prescaler 80, counter in up-count mdoe
+    timerAttachInterrupt(timerLocalSensor, &onTimerLocalSensor, true); // Setup interrupt
+    timerAlarmWrite(timerLocalSensor, timerLocalSensorDelay, true);    // 2 seconds
+    timerAlarmEnable(timerLocalSensor);                                // Alarm enable
 
     printAllTnternalFileList();
 }
@@ -206,7 +193,6 @@ void loop()
 {
     drawDotsOnTouch(); // #ifdef RED_SPOT
 
-    // callAfterDelay(task1);
     callAfterDelay(taskWeatherData);
 
     if (!getLocalTime(&timeinfo))
@@ -224,52 +210,63 @@ void loop()
     if (screenPressFlag)
     {
         screenPressFlag = false;
+        timerWrite(timerScreenIter, 0);
+        timerStart(timerScreenIter);
+        digitalWrite(LED_PIN, true);
         tft.getTouch(&touchX, &touchY);
-        Serial.printf("New touch! X: %d, Y: %d\n", touchX, touchY);
-        if (touchX > 120)
+        // Serial.printf("New touch! X: %d, Y: %d\n", touchX, touchY);
+
+        if (screenSleepingFlag)
         {
-            screenIterator = (screenIterator + 1) % 40;
+            screenSleepingFlag = false;
+            brightnessLevel = loadBrightnessLevel("brightnessLast"); // Load last brightness level from NVS
+            saveSetting(brightnessLevel, "brightness");              // Save current brightness level to NVS
+            ledcWrite(0, brightnessLevelsTable[brightnessLevel]);    // Restore brightness
         }
         else
         {
-            if (screenIterator > 0)
+            if (touchX > 120)
             {
-                screenIterator = (screenIterator - 1) % 40;
+                screenIterator = (screenIterator + 1) % 40;
             }
-            else if (screenIterator == 0)
+            else
             {
-                screenIterator = 39;
+                if (screenIterator > 0)
+                {
+                    screenIterator = (screenIterator - 1) % 40;
+                }
+                else if (screenIterator == 0)
+                {
+                    screenIterator = 39;
+                }
             }
+            ledcWrite(0, brightnessLevelsTable[0]); // Set brightness to max
         }
-        ledcWrite(0, brightnessLevelsTable[0]); // Max jasność
     }
 
-    // Obsługa zmiany jasności
+    // Brightness level changes maintenance
     if (buttonPressedFlag)
     {
-        buttonPressedFlag = false;                            // Zresetuj flagę
-        brightnessLevel = (brightnessLevel + 1) % 6;          // Przełącz na kolejny poziom jasności
-        ledcWrite(0, brightnessLevelsTable[brightnessLevel]); // Ustaw nową jasność
-        saveBrightnessLevel(brightnessLevel);                 // Zapisz jasność do NVS
-        Serial.printf("Brightness level: %d%%\n", (brightnessLevelsTable[brightnessLevel] * 100) / 255);
+        buttonPressedFlag = false;
+        brightnessLevel = (brightnessLevel + 1) % 6;
+        ledcWrite(0, brightnessLevelsTable[brightnessLevel]);
+        saveSetting(brightnessLevel, "brightness");
+    }
+
+    if ((timeinfo.tm_hour == 0 && timeinfo.tm_min == 0 && timeinfo.tm_sec == 0) ||
+        (timeinfo.tm_hour == 2 && timeinfo.tm_min == 0 && timeinfo.tm_sec == 0) ||
+        (timeinfo.tm_hour == 4 && timeinfo.tm_min == 0 && timeinfo.tm_sec == 0))
+    {
+        if (brightnessLevel > 0)
+        {
+            saveSetting(brightnessLevel, "brightnessLast"); // Store last brightness level for future unsleep
+            brightnessLevel = 0;
+            saveSetting(brightnessLevel, "brightness");
+            ledcWrite(0, brightnessLevelsTable[brightnessLevel]);
+            screenSleepingFlag = true;
+        }
     }
 
     ScreenController();
-
-    // Serial.println("------------------------------------------------------");
-    // Serial.printf("Aktualny czas: %02d:%02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-    // Serial.printf("Wilgotność: %.0f %% \n", humidity);
-    // Serial.printf("Temperatura: %.1f *C \n", temperature);
-    // Serial.println("---------------");
-
-    // display.printf("%.1f'C %.1f'C %.0fms %.0fmm\n", weatherData[0].temp, weatherData[0].feelsLike, weatherData[0].windSpeed, weatherData[0].rain);
-
-    // display.printf("Temperatura: %.2f °C\n", weatherData[0].temp);
-    // display.printf("Temperatura odczuwalna: %.2f °C\n", weatherData[0].feelsLike);
-    // display.printf("Prędkość wiatru: %.2f m/s\n", weatherData[0].windSpeed);
-    // display.printf("Deszcz (1h): %.2f mm\n", weatherData[0].rain);
-
-    // delay(970); // Odśwież co sekundę
-    // delay(500);
 }
 //------------------------------------------------------------------------------------------

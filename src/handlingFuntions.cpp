@@ -37,12 +37,12 @@ void getLocalSensorMeasurements()
     {
         humidity = newHumidity;
         temperature = newTemperature;
-        Serial.printf("Odczyt: Temperatura: %.1f *C  Wilgotność: %.0f %%\n", temperature, humidity);
+        Serial.printf("Sensor reads: Temperature: %.1f *C  Humidity: %.0f %%\n", temperature, humidity);
     }
     else
     {
         // Serial.println("Błąd odczytu z czujnika DHT11!");
-        Serial.printf("Odczyt: Błąd odczytu z czujnika DHT11! Temperatura: %.1f *C  Wilgotność: %.0f %%\n", newTemperature, newHumidity);
+        Serial.printf("Sensor reads: Błąd odczytu z czujnika DHT11! Temperature: %.1f *C  Humidity: %.0f %%\n", newTemperature, newHumidity);
     }
 }
 
@@ -53,7 +53,7 @@ void checkAndUpdateTempAndHumidity(char *buffer, int heightOffset)
 
     if (temperature != previousTemperature || humidity != previousHumidity)
     {
-        tft.fillRect(0, (8 * 5 + 2) + (8 * 2 + 2), tft.width(), 8 * 3, TFT_BLACK); // Wyczyść obszar, rysując czarny kwadrat
+        tft.fillRect(0, heightOffset + (8 * 5 + 2) + (8 * 2 + 2), tft.width(), 8 * 3, TFT_BLACK); // Wyczyść obszar, rysując czarny kwadrat
 
         tft.setTextSize(3);
         sprintf(buffer, "%.1f'C  %.0f%%", temperature, humidity);
@@ -115,7 +115,7 @@ void pngDraw(PNGDRAW *pDraw)
     for (int i = 0; i < pDraw->iWidth; i++)
     {
         uint16_t color = lineBuffer[i];
-        if (color != 0x0000) // Pomijamy czarne piksele (przezroczyste)
+        if (color != 0x0000) // Skips transparent pixels
         {
             tft.drawPixel(imageX + i, imageY + pDraw->y, color);
         }
@@ -157,9 +157,9 @@ void printAllTnternalFileList()
     }
 }
 
-void saveBrightnessLevel(int level)
+void saveSetting(int level, const char *name)
 {
-    preferences.begin("settings", false);    // Otwórz przestrzeń nazw "settings" w trybie zapisu
-    preferences.putInt("brightness", level); // Zapisz wartość jasności
-    preferences.end();                       // Zamknij przestrzeń nazw
+    preferences.begin("settings", false); // Open the namespace "settings" in NVS
+    preferences.putInt(name, level);      // Save "name" value
+    preferences.end();                    // Close namespace
 }
