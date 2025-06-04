@@ -251,6 +251,9 @@ void loop()
         brightnessLevel = (brightnessLevel + 1) % 6;
         ledcWrite(0, brightnessLevelsTable[brightnessLevel]);
         saveSetting(brightnessLevel, "brightness");
+
+        showBrightnessChangeFlag = true;
+        brightnessDebugPrintMillis = millis();
     }
 
     if ((timeinfo.tm_hour == 0 && timeinfo.tm_min == 0 && timeinfo.tm_sec == 0) ||

@@ -41,8 +41,7 @@ void getLocalSensorMeasurements()
     }
     else
     {
-        // Serial.println("Błąd odczytu z czujnika DHT11!");
-        Serial.printf("Sensor reads: Błąd odczytu z czujnika DHT11! Temperature: %.1f *C  Humidity: %.0f %%\n", newTemperature, newHumidity);
+        Serial.printf("Sensor reads: Fail at read sensor DHT11! Temperature: %.1f *C  Humidity: %.0f %%\n", newTemperature, newHumidity);
     }
 }
 

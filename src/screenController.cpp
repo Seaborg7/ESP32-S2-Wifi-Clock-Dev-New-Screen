@@ -4,6 +4,8 @@
 
 volatile int screenIterator = 0;
 const int iteratorIncreaser = 0;
+unsigned long brightnessDebugPrintMillis = 0;
+bool showBrightnessChangeFlag = false;
 
 struct tm timeinfo;
 
@@ -26,6 +28,30 @@ void checkAndUpdateIcon(int x, int y)
         tft.fillRect(x, y + 20, 100, 80, TFT_BLACK); // prev: x, y, 100, 100
         displayPNG(("/" + currentIcon + ".png").c_str(), x, y);
         previousIcon = currentIcon;
+    }
+}
+
+void ScreenBrightnessChange()
+{
+    if (showBrightnessChangeFlag)
+    {
+        int percent = (brightnessLevelsTable[brightnessLevel] * 100) / 255;
+        tft.setTextColor(TFT_RED, TFT_BLACK);
+        tft.setTextSize(2);
+        String msg = String(percent) + "%";
+        int16_t x = tft.width() - 48;
+        int16_t y = tft.height() - 16;
+
+        tft.fillRect(x, y, 60, 16, TFT_BLACK);
+
+        tft.setCursor(x, y);
+        tft.print(msg);
+
+        if (millis() - brightnessDebugPrintMillis > 5000)
+        {
+            tft.fillRect(x, y, 60, 16, TFT_BLACK);
+            showBrightnessChangeFlag = false;
+        }
     }
 }
 
@@ -122,6 +148,8 @@ void ScreenController()
     minutes %= 60;
     sprintf(buffer, "%02lu:%02lu:%02lu", hours, minutes, seconds);
     drawCenteredText(String(buffer), 320 - 8 - 1);
+
+    ScreenBrightnessChange();
 
     // // Small iterable text on bottom half of the screen //
     // // tft.setCursor(0, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2) + 100);
