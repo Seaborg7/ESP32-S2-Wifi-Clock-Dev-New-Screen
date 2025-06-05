@@ -7,6 +7,17 @@ const int iteratorIncreaser = 0;
 unsigned long brightnessDebugPrintMillis = 0;
 bool showBrightnessChangeFlag = false;
 
+volatile int brightnessLevel = 0; // index in table brightnessLevelsTable
+int lastBrightnessLevel = 0;
+const int brightnessLevelsTable[] = {255, 204, 153, 102, 51, 0}; // 100%, 80%, 60%, 40%, 20%, 0%
+
+unsigned long real5sStartMillis = 0;
+int last5sBlock = -1;
+
+hw_timer_t *timerScreenIter = NULL;
+hw_timer_t *timerLocalSensor = NULL;
+uint16_t touchX, touchY;
+
 struct tm timeinfo;
 
 const char *daysOfWeek[] = {
@@ -24,28 +35,40 @@ void checkAndUpdateIcon(int x, int y)
     String currentIcon = weatherData[screenIterator + iteratorIncreaser].icon;
     if (currentIcon != previousIcon)
     {
-        // tft.fillRect(10, heightOffset + 130, 100, 100, TFT_BLACK); // Wyczyść obszar, rysując czarny kwadrat
+        // tft.fillRect(10, heightOffset + 130, 100, 100, TFT_BLACK);
         tft.fillRect(x, y + 20, 100, 80, TFT_BLACK); // prev: x, y, 100, 100
         displayPNG(("/" + currentIcon + ".png").c_str(), x, y);
         previousIcon = currentIcon;
     }
 }
 
-void ScreenBrightnessChange()
+void screenBrightnessChange()
 {
     if (showBrightnessChangeFlag)
     {
         int percent = (brightnessLevelsTable[brightnessLevel] * 100) / 255;
-        tft.setTextColor(TFT_RED, TFT_BLACK);
+        String percentStr = String(percent);
+        static int oldPercent = -1;
+
+        tft.setTextColor(TFT_LIGHTGREY, TFT_BLACK);
         tft.setTextSize(2);
-        String msg = String(percent) + "%";
+
         int16_t x = tft.width() - 48;
         int16_t y = tft.height() - 16;
+        int16_t x_percent = tft.width() - tft.textWidth("%");
+        int16_t x_number = x_percent - tft.textWidth(percentStr.c_str());
 
-        tft.fillRect(x, y, 60, 16, TFT_BLACK);
+        if (percent != oldPercent)
+        {
+            tft.fillRect(x, y, 60, 16, TFT_BLACK);
+            oldPercent = percent;
+        }
 
-        tft.setCursor(x, y);
-        tft.print(msg);
+        tft.setCursor(x_number, y);
+        tft.print(percentStr);
+
+        tft.setCursor(x_percent, y);
+        tft.print("%");
 
         if (millis() - brightnessDebugPrintMillis > 5000)
         {
@@ -55,8 +78,96 @@ void ScreenBrightnessChange()
     }
 }
 
-void ScreenController()
+unsigned long realMillisInCurrent5sBlock()
 {
+    int current5sBlock = timeinfo.tm_sec / 5;
+    if (current5sBlock != last5sBlock)
+    {
+        last5sBlock = current5sBlock;
+        real5sStartMillis = millis();
+    }
+    return millis() - real5sStartMillis;
+}
+
+void drawSecondProgressBar()
+{
+    static int prev5sBlock = -1;
+    unsigned long msInBlock = realMillisInCurrent5sBlock();
+    if (msInBlock > 5000)
+        msInBlock = 5000;
+
+    int barWidth;
+    const int barMax = 240;
+
+    // Phase 1: 0-2.5s, filling in DARKGREY
+    if (msInBlock < 2500)
+    {
+        barWidth = map(msInBlock, 0, 2500, 0, barMax);
+        if (msInBlock == 0 || prev5sBlock != timeinfo.tm_sec / 5)
+        {
+            tft.fillRect(0, 0, barMax, 4, TFT_BLACK);
+            prev5sBlock = timeinfo.tm_sec / 5;
+        }
+        tft.fillRect(0, 0, barWidth, 4, TFT_DARKGREY);
+        if (msInBlock >= 2499)
+        {
+            tft.fillRect(0, 0, barMax, 4, TFT_DARKGREY);
+        }
+    }
+    // Phase 2: 2.5-5s, filling in BLACK on top of darkgrey
+    else
+    {
+        // First, ensure the background is filled with darkgrey (only once when entering this phase)
+        static bool filledDarkGrey = false;
+        if (!filledDarkGrey)
+        {
+            tft.fillRect(0, 0, barMax, 4, TFT_DARKGREY);
+            filledDarkGrey = true;
+        }
+        barWidth = map(msInBlock, 2500, 5000, 0, barMax);
+        tft.fillRect(0, 0, barWidth, 4, TFT_BLACK);
+        if (msInBlock >= 4999)
+        {
+            tft.fillRect(0, 0, barMax, 4, TFT_BLACK);
+            filledDarkGrey = false; // reset for next iteration
+        }
+        // Reset flag when entering a new block
+        if (msInBlock < 2600)
+            filledDarkGrey = false;
+    }
+}
+
+void screenSaver()
+{
+    if ((timeinfo.tm_hour == 0 && timeinfo.tm_min == 0 && (timeinfo.tm_sec >= 0 && timeinfo.tm_sec < 10)) ||
+        (timeinfo.tm_hour == 2 && timeinfo.tm_min == 0 && (timeinfo.tm_sec >= 0 && timeinfo.tm_sec < 10)) ||
+        (timeinfo.tm_hour == 3 && timeinfo.tm_min == 0 && (timeinfo.tm_sec >= 0 && timeinfo.tm_sec < 10)) ||
+        (timeinfo.tm_hour == 4 && timeinfo.tm_min == 0 && (timeinfo.tm_sec >= 0 && timeinfo.tm_sec < 10)))
+    {
+        if (brightnessLevel != 5)
+        {
+            // Serial.println("brightnessLevel > 0, setting brightness to 0 and sleeping screen");
+
+            saveSetting(brightnessLevel, "brightnessLast"); // Store last brightness level for future unsleep
+            // Serial.printf("saveSetting: %d as brightnessLast\n", brightnessLevel);
+
+            brightnessLevel = 5;
+            saveSetting(brightnessLevel, "brightness");
+            // Serial.printf("saveSetting: %d as brightness\n", brightnessLevel);
+
+            ledcWrite(0, brightnessLevelsTable[brightnessLevel]);
+            // Serial.printf("ledcWrite: %d as brightness\n", brightnessLevelsTable[brightnessLevel]);
+
+            screenSleepingFlag = true;
+            // Serial.println("Screen sleeping now");
+        }
+    }
+}
+
+void screenController()
+{
+    drawSecondProgressBar();
+
     // Font Height is 8 pixels for size 1, 16 for size 2 etc, thats why HEIGHT is multiplied by 8 + 2 for spacing
     char buffer[50];
     int heightOffset = 20; // 20
@@ -73,28 +184,13 @@ void ScreenController()
     sprintf(buffer, "%02d-%02d %s", timeinfo.tm_mday, timeinfo.tm_mon + 1, daysOfWeek[timeinfo.tm_wday]);
     drawCenteredText(String(buffer), heightOffset + (8 * 5 + 2));
 
-    // tft.setCursor(25, (8 * 5 + 2) + (8 * 2 + 2));
-    // tft.setTextSize(3);
-    // tft.printf("%.1f'C", temperature);
-    // tft.setCursor(160, (8 * 5 + 2) + (8 * 2 + 2));
-    // tft.printf("%.0f%% ", humidity);
-
-    // 3rd line - temperature and humidity
-    // tft.setTextSize(3);
-    // sprintf(buffer, "%.1f'C  %.0f%%", temperature, humidity);
-    // drawCenteredText(String(buffer), (8 * 5 + 2) + (8 * 2 + 2));
     checkAndUpdateTempAndHumidity(buffer, heightOffset);
-
-    // tft.setCursor(60, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2));
-    // tft.setTextSize(2);
-    // tft.printf("%s  %s", weatherData[0].time.substr(0, 4).c_str(), weatherData[0].time.substr(5, 10).c_str());
 
     // 4th line - sunrise and sunset
     tft.setTextSize(2);
     sprintf(buffer, "%s  %s", weatherData[0].time.substring(0, 5).c_str(), weatherData[0].time.substring(6, 11).c_str());
     drawCenteredText(String(buffer), heightOffset + (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2));
 
-    // tft.drawFastHLine(200, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2), 210, TFT_WHITE);
     tft.drawLine(20, heightOffset + (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2), 220, heightOffset + (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2), TFT_WHITE);
     //-----------------------------------------------------------------------------------------------------------------------//  LINE on 104-105
     if (screenIterator > 0)
@@ -148,22 +244,4 @@ void ScreenController()
     minutes %= 60;
     sprintf(buffer, "%02lu:%02lu:%02lu", hours, minutes, seconds);
     drawCenteredText(String(buffer), 320 - 8 - 1);
-
-    ScreenBrightnessChange();
-
-    // // Small iterable text on bottom half of the screen //
-    // // tft.setCursor(0, (8 * 5 + 2) + (8 * 2 + 2) + (8 * 3 + 2) + (8 * 2 + 2) + 100);
-    // // tft.setTextSize(2);
-    // // tft.printf("%s %.1f %.1f\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
-    // // tft.printf("%s\n", weatherData[screenIterator + iteratorIncreaser].description.c_str());
-    // // tft.printf("%.0f km/h %.1f %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed * 3.6f, weatherData[screenIterator + iteratorIncreaser].rain, weatherData[screenIterator + iteratorIncreaser].snow);
-
-    // // tft.printf("%s %s\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), weatherData[screenIterator + iteratorIncreaser].description.c_str());
-    // // tft.printf("Temp: %.1f 'C Feels like: %.1f 'C\n", weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
-    // // tft.printf("Wind %.2f m/s Rain(3h) %.2f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed, weatherData[screenIterator + iteratorIncreaser].rain);
-
-    // Serial.printf("Time: %s   ScreenIter: %d\n", formatDateTime(weatherData[screenIterator + iteratorIncreaser].time).c_str(), screenIterator);
-    // Serial.printf("Description: %s \n", weatherData[screenIterator + iteratorIncreaser].description.c_str());
-    // Serial.printf("Temp: %.1f 'C Feels like: %.1f 'C\n", weatherData[screenIterator + iteratorIncreaser].temp, weatherData[screenIterator + iteratorIncreaser].feelsLike);
-    // Serial.printf("Wind %.0f km/h Rain(3h) %.1f mm Snow(3h) %.1f mm\n", weatherData[screenIterator + iteratorIncreaser].windSpeed * 3.6f, weatherData[screenIterator + iteratorIncreaser].rain, weatherData[screenIterator + iteratorIncreaser].snow);
 }

@@ -13,7 +13,7 @@
 
 TFT_eSPI tft = TFT_eSPI();
 DHT dht(DHT_PIN, DHTTYPE);
-Preferences preferences; // Obiekt do zarządzania pamięcią NVS
+Preferences preferences; // Object for managing NVS memory
 
 void WifiInit()
 {
@@ -28,6 +28,21 @@ void WifiInit()
         Serial.print(".");
     }
     Serial.println("Connected to WiFi");
+}
+
+void TftInit()
+{
+    tft.init();
+    tft.setRotation(2);
+    touch_calibrate();
+    tft.fillScreen(TFT_BLACK);
+
+    // Backlight configuration
+    pinMode(TFT_BL, OUTPUT);
+    ledcAttachPin(TFT_BL, 0);                             // PWM channel is set to 0
+    ledcSetup(0, 5000, 8);                                // Channel 0, frequency 5 kHz, resolution 8 bits
+    brightnessLevel = loadBrightnessLevel("brightness");  // Load brightness level from NVS
+    ledcWrite(0, brightnessLevelsTable[brightnessLevel]); // Set brightness based on NVS read
 }
 
 void touch_calibrate()
@@ -73,7 +88,6 @@ void touch_calibrate()
         // data not valid so recalibrate
         tft.fillScreen(TFT_BLACK);
         tft.setCursor(20, 0);
-        // tft.setTextFont(2);
         tft.setTextSize(1);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
 
@@ -93,7 +107,6 @@ void touch_calibrate()
         tft.setTextColor(TFT_GREEN, TFT_BLACK);
         tft.println("Calibration complete!");
 
-        // store data
         File f = SPIFFS.open(CALIBRATION_FILE, "w");
         if (f)
         {

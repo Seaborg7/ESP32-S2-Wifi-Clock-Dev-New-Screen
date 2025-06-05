@@ -1,3 +1,4 @@
+#include "main.h"
 #include "handlingFuntions.h"
 #include "initFuntions.h"
 #include "screenController.h"
@@ -37,7 +38,7 @@ void getLocalSensorMeasurements()
     {
         humidity = newHumidity;
         temperature = newTemperature;
-        Serial.printf("Sensor reads: Temperature: %.1f *C  Humidity: %.0f %%\n", temperature, humidity);
+        // Serial.printf("Sensor reads: Temperature: %.1f *C  Humidity: %.0f %%\n", temperature, humidity);
     }
     else
     {
@@ -52,7 +53,7 @@ void checkAndUpdateTempAndHumidity(char *buffer, int heightOffset)
 
     if (temperature != previousTemperature || humidity != previousHumidity)
     {
-        tft.fillRect(0, heightOffset + (8 * 5 + 2) + (8 * 2 + 2), tft.width(), 8 * 3, TFT_BLACK); // Wyczyść obszar, rysując czarny kwadrat
+        tft.fillRect(0, heightOffset + (8 * 5 + 2) + (8 * 2 + 2), tft.width(), 8 * 3, TFT_BLACK); // Clear the area for temperature and humidity
 
         tft.setTextSize(3);
         sprintf(buffer, "%.1f'C  %.0f%%", temperature, humidity);
@@ -109,7 +110,7 @@ int32_t pngSeek(PNGFILE *page, int32_t position)
 void pngDraw(PNGDRAW *pDraw)
 {
     uint16_t lineBuffer[MAX_IMAGE_WIDTH];
-    png.getLineAsRGB565(pDraw, lineBuffer, PNG_RGB565_BIG_ENDIAN, 0x00000000); // Czarny jako przezroczysty
+    png.getLineAsRGB565(pDraw, lineBuffer, PNG_RGB565_BIG_ENDIAN, 0x00000000); // Black as transparent
 
     for (int i = 0; i < pDraw->iWidth; i++)
     {
@@ -161,4 +162,75 @@ void saveSetting(int level, const char *name)
     preferences.begin("settings", false); // Open the namespace "settings" in NVS
     preferences.putInt(name, level);      // Save "name" value
     preferences.end();                    // Close namespace
+}
+
+void localTimeHandler(struct tm *timeinfo)
+{
+    if (!getLocalTime(timeinfo))
+    {
+        Serial.println("Failed to obtain time");
+        // return;
+    }
+}
+
+void localSensorMeasurementsHandler(bool *readSensorFlag)
+{
+    if (*readSensorFlag)
+    {
+        *readSensorFlag = false;
+        getLocalSensorMeasurements();
+    }
+}
+void screenPressHandler(volatile bool *screenPressFlag)
+{
+    if (*screenPressFlag)
+    {
+        *screenPressFlag = false;
+        timerWrite(timerScreenIter, 0);
+        timerStart(timerScreenIter);
+        digitalWrite(LED_PIN, true);
+        tft.getTouch(&touchX, &touchY);
+        // Serial.printf("New touch! X: %d, Y: %d\n", touchX, touchY);
+
+        if (screenSleepingFlag)
+        {
+            screenSleepingFlag = false;
+            brightnessLevel = loadBrightnessLevel("brightnessLast"); // Load last brightness level from NVS
+            saveSetting(brightnessLevel, "brightness");              // Save current brightness level to NVS
+            ledcWrite(0, brightnessLevelsTable[brightnessLevel]);    // Restore brightness
+        }
+        else
+        {
+            if (touchX > 120)
+            {
+                screenIterator = (screenIterator + 1) % 40;
+            }
+            else
+            {
+                if (screenIterator > 0)
+                {
+                    screenIterator = (screenIterator - 1) % 40;
+                }
+                else if (screenIterator == 0)
+                {
+                    screenIterator = 39;
+                }
+            }
+            ledcWrite(0, brightnessLevelsTable[0]); // Set brightness to max
+        }
+    }
+}
+
+void buttonPressHandler(volatile bool *buttonPressFlag)
+{
+    if (*buttonPressFlag)
+    {
+        *buttonPressFlag = false;
+        brightnessLevel = (brightnessLevel + 1) % 6;
+        ledcWrite(0, brightnessLevelsTable[brightnessLevel]);
+        saveSetting(brightnessLevel, "brightness");
+
+        showBrightnessChangeFlag = true;
+        brightnessDebugPrintMillis = millis();
+    }
 }

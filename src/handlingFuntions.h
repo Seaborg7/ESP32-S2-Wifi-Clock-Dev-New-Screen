@@ -1,8 +1,12 @@
 #pragma once
 
+#include "cyclicFunctions.h"
 #include "Arduino.h"
 #include <PNGdec.h>
 #include <SPIFFS.h>
+
+#define LED_PIN 15
+#define BUTTON_PIN 0
 
 extern PNG png;
 extern File pngFile;
@@ -21,3 +25,7 @@ int32_t pngSeek(PNGFILE *page, int32_t position);
 void displayPNG(const char *filename, int x, int y);
 void printAllTnternalFileList();
 void saveSetting(int level, char const *name);
+void localTimeHandler(struct tm *timeinfo);
+void localSensorMeasurementsHandler(bool readSensorFlag);
+void screenPressHandler(volatile bool *screenPressFlag);
+void buttonPressHandler(volatile bool *buttonPressFlag);
