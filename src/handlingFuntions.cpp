@@ -1,8 +1,4 @@
-#include "main.h"
 #include "handlingFuntions.h"
-#include "initFuntions.h"
-#include "screenController.h"
-#include "weatherHandler.h"
 
 PNG png;
 File pngFile;
@@ -173,7 +169,7 @@ void localTimeHandler(struct tm *timeinfo)
     }
 }
 
-void localSensorMeasurementsHandler(bool *readSensorFlag)
+void localSensorMeasurementsHandler(volatile bool *readSensorFlag)
 {
     if (*readSensorFlag)
     {

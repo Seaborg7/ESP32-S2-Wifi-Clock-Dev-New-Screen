@@ -1,6 +1,10 @@
 #pragma once
 
 #include "cyclicFunctions.h"
+#include "handlingFuntions.h"
+#include "initFuntions.h"
+#include "screenController.h"
+#include "weatherHandler.h"
 #include "Arduino.h"
 #include <PNGdec.h>
 #include <SPIFFS.h>
@@ -26,6 +30,6 @@ void displayPNG(const char *filename, int x, int y);
 void printAllTnternalFileList();
 void saveSetting(int level, char const *name);
 void localTimeHandler(struct tm *timeinfo);
-void localSensorMeasurementsHandler(bool readSensorFlag);
+void localSensorMeasurementsHandler(volatile bool *readSensorFlag);
 void screenPressHandler(volatile bool *screenPressFlag);
 void buttonPressHandler(volatile bool *buttonPressFlag);

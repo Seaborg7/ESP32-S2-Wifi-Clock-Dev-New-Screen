@@ -1,6 +1,8 @@
 #pragma once
 
 #include "initFuntions.h"
+#include "handlingFuntions.h"
+#include "weatherHandler.h"
 
 extern struct tm timeinfo;
 

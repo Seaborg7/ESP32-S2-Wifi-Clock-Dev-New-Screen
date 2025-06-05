@@ -1,6 +1,4 @@
 #include "screenController.h"
-#include "handlingFuntions.h"
-#include "weatherHandler.h"
 
 volatile int screenIterator = 0;
 const int iteratorIncreaser = 0;
