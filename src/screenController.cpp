@@ -135,28 +135,28 @@ void drawSecondProgressBar()
     }
 }
 
-void screenSaver()
+void screenSaver(volatile bool *screenSleepingFlag, volatile int *brightnessLevel)
 {
     if ((timeinfo.tm_hour == 0 && timeinfo.tm_min == 0 && (timeinfo.tm_sec >= 0 && timeinfo.tm_sec < 10)) ||
         (timeinfo.tm_hour == 2 && timeinfo.tm_min == 0 && (timeinfo.tm_sec >= 0 && timeinfo.tm_sec < 10)) ||
         (timeinfo.tm_hour == 3 && timeinfo.tm_min == 0 && (timeinfo.tm_sec >= 0 && timeinfo.tm_sec < 10)) ||
         (timeinfo.tm_hour == 4 && timeinfo.tm_min == 0 && (timeinfo.tm_sec >= 0 && timeinfo.tm_sec < 10)))
     {
-        if (brightnessLevel != 5)
+        if (*brightnessLevel != 5)
         {
             // Serial.println("brightnessLevel > 0, setting brightness to 0 and sleeping screen");
 
-            saveSetting(brightnessLevel, "brightnessLast"); // Store last brightness level for future unsleep
+            saveSetting(*brightnessLevel, "brightnessLast"); // Store last brightness level for future unsleep
             // Serial.printf("saveSetting: %d as brightnessLast\n", brightnessLevel);
 
-            brightnessLevel = 5;
-            saveSetting(brightnessLevel, "brightness");
+            *brightnessLevel = 5;
+            saveSetting(*brightnessLevel, "brightness");
             // Serial.printf("saveSetting: %d as brightness\n", brightnessLevel);
 
-            ledcWrite(0, brightnessLevelsTable[brightnessLevel]);
+            ledcWrite(0, brightnessLevelsTable[*brightnessLevel]);
             // Serial.printf("ledcWrite: %d as brightness\n", brightnessLevelsTable[brightnessLevel]);
 
-            screenSleepingFlag = true;
+            *screenSleepingFlag = true;
             // Serial.println("Screen sleeping now");
         }
     }

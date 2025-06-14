@@ -19,5 +19,5 @@ void checkAndUpdateIcon(int x, int y);
 void screenBrightnessChange();
 unsigned long realMillisInCurrent5sBlock();
 void drawSecondProgressBar();
-void screenSaver();
+void screenSaver(volatile bool *screenSleepingFlag, volatile int *brightnessLevel);
 void screenController();

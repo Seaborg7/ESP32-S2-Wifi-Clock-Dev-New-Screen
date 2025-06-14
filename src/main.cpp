@@ -70,6 +70,6 @@ void loop()
 
     screenController();
     screenBrightnessChange();
-    screenSaver();
+    screenSaver(&screenSleepingFlag, &brightnessLevel);
 }
 //------------------------------------------------------------------------------------------
