@@ -191,6 +191,7 @@ void screenPressHandler(volatile bool *screenPressFlag)
         if (screenSleepingFlag)
         {
             screenSleepingFlag = false;
+            saveSetting(screenSleepingFlag, "screenSleepingFlag");   // Store screen sleeping flag state
             brightnessLevel = loadBrightnessLevel("brightnessLast"); // Load last brightness level from NVS
             saveSetting(brightnessLevel, "brightness");              // Save current brightness level to NVS
             ledcWrite(0, brightnessLevelsTable[brightnessLevel]);    // Restore brightness

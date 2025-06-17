@@ -157,6 +157,7 @@ void screenSaver(volatile bool *screenSleepingFlag, volatile int *brightnessLeve
             // Serial.printf("ledcWrite: %d as brightness\n", brightnessLevelsTable[brightnessLevel]);
 
             *screenSleepingFlag = true;
+            saveSetting(*screenSleepingFlag, "screenSleepingFlag"); // Store screen sleeping flag state
             // Serial.println("Screen sleeping now");
         }
     }

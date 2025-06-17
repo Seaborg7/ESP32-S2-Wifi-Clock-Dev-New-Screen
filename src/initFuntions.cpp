@@ -43,6 +43,8 @@ void TftInit()
     ledcSetup(0, 5000, 8);                                // Channel 0, frequency 5 kHz, resolution 8 bits
     brightnessLevel = loadBrightnessLevel("brightness");  // Load brightness level from NVS
     ledcWrite(0, brightnessLevelsTable[brightnessLevel]); // Set brightness based on NVS read
+
+    screenSleepingFlag = loadScreenSleepingFlag(); // Load screen sleeping flag from NVS
 }
 
 void touch_calibrate()
@@ -122,4 +124,12 @@ int loadBrightnessLevel(char const *name)
     int level = preferences.getInt(name, 0); // Read the brightness level, default to 0 if not found
     preferences.end();                       // Close the namespace
     return level;
+}
+
+volatile bool loadScreenSleepingFlag()
+{
+    preferences.begin("settings", true);                                        // Open the namespace "settings" in NVS for reading
+    bool screenSleepingFlag = preferences.getBool("screenSleepingFlag", false); // Read the screen sleeping flag, default to false if not found
+    preferences.end();                                                          // Close the namespace
+    return screenSleepingFlag;
 }

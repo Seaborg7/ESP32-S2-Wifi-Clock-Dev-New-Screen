@@ -16,3 +16,4 @@ void WifiInit();
 void TftInit();
 void touch_calibrate();
 int loadBrightnessLevel(char const *name);
+volatile bool loadScreenSleepingFlag();
